@@ -25,11 +25,11 @@
 # CELEBA tune
 # CELEBA variational
 
+# SVHN vanilla
+# CELEBA vanilla
+# CIFAR10 vanilla
 CELEBA thermo
-SVHN vanilla
 SVHN thermo
-CELEBA vanilla
-CIFAR10 vanilla
 CIFAR10 thermo
 
 # ==================== Baseline Jobs ====================

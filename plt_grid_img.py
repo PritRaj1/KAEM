@@ -2,8 +2,8 @@ import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 
-file_path_real = "logs/Vanilla/CIFAR10/ULA/mixture/generated_images.h5"
-file_path_generated = "logs/Thermodynamic/CELEBA/ULA/mixture/generated_images.h5"
+file_path_real = "logs/Thermodynamic/CELEBA/ULA/mixture/generated_images_epoch_60.h5"
+file_path_generated = "logs/Vanilla/CELEBA/ULA/mixture/generated_images_epoch_60.h5"
 
 with h5py.File(file_path_real, "r") as h5_file:
     real_data = h5_file["samples"][()]
@@ -11,7 +11,7 @@ with h5py.File(file_path_real, "r") as h5_file:
 with h5py.File(file_path_generated, "r") as h5_file:
     generated_data = h5_file["samples"][()]
 
-grid_size = (10, 10)
+grid_size = (7, 7)
 fig = plt.figure(figsize=(9, 7))
 gs = fig.add_gridspec(grid_size[0], grid_size[1] * 2 + 1, wspace=0, hspace=0)
 
