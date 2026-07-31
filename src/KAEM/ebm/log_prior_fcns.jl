@@ -143,9 +143,7 @@ function (lp::LogPriorMix)(
     )
     """Log-prior (mixture): ∑_q [ log ( ∑_p α_p exp(f_{q,p}(z_q)) π_0(z_q) ) ]"""
     Q, P, S = ebm.q_size, ebm.p_size, ebm.s_size
-    if component_mask === nothing
-        component_mask = choose_component(ps.dist.α, S, Q, P, st_rng; ula_init = ula)
-    end
+
 
     alpha_logits =
         ebm.bool_config.use_attention_kernel ?
@@ -162,24 +160,31 @@ function (lp::LogPriorMix)(
     alpha = softmax(alpha_logits; dims = 2)
     π_0 = ebm.π_pdf(z, ps.dist.π_μ, ps.dist.π_σ; log_bool = false)
 
+    # Partition function
+    Z = 1.0f0
+    if lp.normalize && !ula
+        if component_mask === nothing
+            component_mask = choose_component(ps.dist.α, S, Q, P, st_rng; ula_init = ula)
+        end
+
+        Z = PermutedDimsArray(
+            sum(
+                first(
+                    ebm.quad(
+                        ebm,
+                        ps,
+                        st_kan,
+                        st_lyrnorm,
+                        st_quad;
+                        mode = MixtureMode(),
+                        component_mask = component_mask,
+                    )
+                ), dims = 3
+            ), (1, 3, 2))
+    end
+#
     # Energy functions of each component, q -> p
     f, st_lyrnorm = ebm(ps, st_kan, st_lyrnorm, dropdims(z; dims = 2))
-    Z = PermutedDimsArray(
-        sum(
-            first(
-                ebm.quad(
-                    ebm,
-                    ps,
-                    st_kan,
-                    st_lyrnorm,
-                    st_quad;
-                    mode = MixtureMode(),
-                    component_mask = component_mask,
-                )
-            ), dims = 3
-        ), (1, 3, 2)
-    )
-
     log_p = log_mix_pdf(f, alpha, π_0, Z, lp.ε)
     return log_p .- reg, st_lyrnorm
 end

@@ -58,11 +58,11 @@ function (s::UnivITSSampler)(ps, st_kan, st_lux, st_rng; ula_init = false)
         ebm, ps.ebm, st_kan.ebm, Lux.testmode(st_lux.ebm), st_kan.quad,
     )
     cdf = cumsum(cdf; dims = 3)
-    cdf = cat(view(zero(cdf), :, :, 1:1), cdf; dims = 3)
+    # cdf = cat(view(zero(cdf), :, :, 1:1), cdf; dims = 3)
 
     zmin = ebm.bool_config.no_grid ? st_kan.ebm[:a].min : view(st_kan.ebm[:a].grid, :, 1)
     grid = PermutedDimsArray(view(grid, :, :, :), (3, 1, 2))
-    grid = cat(reshape(zmin, 1, P, 1), grid; dims = 3)
+    # grid = cat(reshape(zmin, 1, P, 1), grid; dims = 3)
 
     rv = ula_init ? st_rng.posterior_its : st_rng.prior_its
     rand_vals = rv .* cdf[:, :, end]

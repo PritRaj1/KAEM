@@ -23,9 +23,7 @@ dataset_mapping = Dict(
 
 # Huggingface datasets loading is lazy, so batch load
 function batch_process(subset; img_resize::Union{Nothing, Tuple{Int, Int}} = (32, 32))
-    channel_views = map(x -> channelview(x), subset)
-    subdata = cat(channel_views..., dims = 4)
-    return imresize(permutedims(subdata, (2, 3, 1, 4)), img_resize) ./ 255
+    return imresize(permutedims(subset, (2, 3, 1, 4)), img_resize) ./ 255
 end
 
 function get_vision_dataset(
