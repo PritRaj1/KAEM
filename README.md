@@ -26,10 +26,6 @@ uv sync --extra dev
 mkdir -p PDE_data && curl -L -o PDE_data/darcy_flow.h5 https://darus.uni-stuttgart.de/api/access/datafile/133219
 ```
 
-### Note for windows users
-
-This repo uses shell scripts solely for convenience, you can run everything without them too. If you want to use the shell scripts, [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) is recommended.
-
 ---
 
 ## Quick start
