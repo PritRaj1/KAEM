@@ -5,7 +5,7 @@ export ManualAdam
 using Optimisers
 using Optimisers: @..
 
-struct ManualAdam{T <: Real} <: Optimisers.AbstractRule
+struct ManualAdam{T} <: Optimisers.AbstractRule
     eta::T
     beta::Tuple{T, T}
     decay::T
@@ -19,7 +19,7 @@ ManualAdam(
     decay::T = zero(T),
     epsilon::T = T(1.0e-8);
     couple::Bool = true,
-) where {T <: Real} = ManualAdam{T}(eta, beta, decay, epsilon, couple)
+) where {T} = ManualAdam{T}(eta, beta, decay, epsilon, couple)
 
 Optimisers.init(o::ManualAdam, x::AbstractArray) = (m = zero(x), v = zero(x), t = 0)
 
