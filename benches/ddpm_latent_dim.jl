@@ -8,7 +8,6 @@ using .Utils: pu
 using .DDPMModel: init_DDPM
 using .DDPMLoss: DDPMTrainStep
 using .BaselineRNG: seed_rng
-using .optimization: ManualAdam
 using .DataUtils: get_vision_dataset
 
 conf = ConfParse("config/baseline_svhn_config.ini")
@@ -34,7 +33,7 @@ function setup_ddpm_model()
     ps, st = ps |> ComponentArray |> Lux.f32 |> pu, st |> Lux.f32 |> pu
 
     lr = parse(Float32, retrieve(conf, "DDPM", "learning_rate"))
-    opt = ManualAdam(lr)
+    opt = Optimisers.Adam(lr)
     opt_state = Optimisers.setup(opt, ps)
 
     st_rng = seed_rng(model; rng = rng)

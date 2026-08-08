@@ -301,7 +301,7 @@ function init_trainer(
         model = init_VAE(conf, x_shape; rng = rng)
         β = parse(Float32, retrieve(conf, "VAE", "beta"))
         lr_vae = parse(Float32, retrieve(conf, "VAE", "learning_rate"))
-        opt_vae = ManualAdam(lr_vae)
+        opt_vae = Optimisers.Adam(lr_vae)
         model, train_step, opt_state, ps, st = prep_vae(
             model,
             x_sample,
@@ -331,8 +331,8 @@ function init_trainer(
         lr_gen = parse(Float32, retrieve(conf, "GAN", "lr_gen"))
         lr_disc = parse(Float32, retrieve(conf, "GAN", "lr_disc"))
 
-        opt_gen = ManualAdam(lr_gen)
-        opt_disc = ManualAdam(lr_disc)
+        opt_gen = Optimisers.Adam(lr_gen)
+        opt_disc = Optimisers.Adam(lr_disc)
 
         model, train_step, opt_state_gen, opt_state_disc, ps, st = prep_gan(
             model,
@@ -360,7 +360,7 @@ function init_trainer(
     elseif model_type == :ddpm
         model = init_DDPM(conf, x_shape; rng = rng)
         lr_ddpm = parse(Float32, retrieve(conf, "DDPM", "learning_rate"))
-        opt_ddpm = ManualAdam(lr_ddpm)
+        opt_ddpm = Optimisers.Adam(lr_ddpm)
         model, train_step, opt_state, ps, st = prep_ddpm(
             model,
             x_sample,
@@ -398,8 +398,8 @@ function init_trainer(
         α_cd = parse(Float32, retrieve(conf, "PANG", "alpha_cd"))
         lr_gen = parse(Float32, retrieve(conf, "PANG", "learning_rate"))
         lr_ebm = parse(Float32, retrieve(conf, "PANG", "ebm_learning_rate"))
-        opt_gen = ManualAdam(lr_gen)
-        opt_ebm = ManualAdam(lr_ebm)
+        opt_gen = Optimisers.Adam(lr_gen)
+        opt_ebm = Optimisers.Adam(lr_ebm)
         model, train_step, opt_state_gen, opt_state_disc, ps, st = prep_pang(
             model,
             x_sample,

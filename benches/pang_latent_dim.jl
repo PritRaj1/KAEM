@@ -8,7 +8,6 @@ using .Utils: pu
 using .PangEBMModel: init_PangEBM
 using .PangLoss: PangTrainStep
 using .BaselineRNG: seed_rng
-using .optimization: ManualAdam
 using .DataUtils: get_vision_dataset
 
 conf = ConfParse("config/baseline_svhn_config.ini")
@@ -37,8 +36,8 @@ function setup_pang_model(latent_dim)
 
     lr_gen = parse(Float32, retrieve(conf, "PANG", "learning_rate"))
     lr_ebm = parse(Float32, retrieve(conf, "PANG", "ebm_learning_rate"))
-    opt_state_gen = Optimisers.setup(ManualAdam(lr_gen), ps.gen)
-    opt_state_ebm = Optimisers.setup(ManualAdam(lr_ebm), ps.ebm)
+    opt_state_gen = Optimisers.setup(Optimisers.Adam(lr_gen), ps.gen)
+    opt_state_ebm = Optimisers.setup(Optimisers.Adam(lr_ebm), ps.ebm)
 
     st_rng = seed_rng(model; rng = rng)
     α_cd = parse(Float32, retrieve(conf, "PANG", "alpha_cd"))

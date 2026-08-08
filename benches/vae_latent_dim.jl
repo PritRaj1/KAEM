@@ -8,7 +8,6 @@ using .Utils: pu
 using .VAEModel: init_VAE
 using .VAELoss: VAETrainStep
 using .BaselineRNG: seed_rng
-using .optimization: ManualAdam
 using .DataUtils: get_vision_dataset
 
 conf = ConfParse("config/baseline_svhn_config.ini")
@@ -36,7 +35,7 @@ function setup_vae_model(latent_dim)
     ps, st = ps |> ComponentArray |> Lux.f32 |> pu, st |> Lux.f32 |> pu
 
     lr_vae = parse(Float32, retrieve(conf, "VAE", "learning_rate"))
-    opt_vae = ManualAdam(lr_vae)
+    opt_vae = Optimisers.Adam(lr_vae)
     opt_state = Optimisers.setup(opt_vae, ps)
 
     st_rng = seed_rng(model; rng = rng)

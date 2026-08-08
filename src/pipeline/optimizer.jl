@@ -1,11 +1,8 @@
 module optimization
 
-export opt, create_opt, ManualAdam
+export opt, create_opt
 
 using Lux, ConfParser, Optimisers, ParameterSchedulers
-
-include("manual_adam.jl")
-using .AdamOptimizer
 
 struct opt
     rule
@@ -32,8 +29,8 @@ function create_opt(conf::ConfParse)
     opt_type = retrieve(conf, "OPTIMIZER", "type")
 
     opt_mapping = Dict(
-        "adam" => () -> ManualAdam(LR, β, 0.0f0, ε),
-        "adamw" => () -> ManualAdam(LR, β, decay, ε),
+        "adam" => () -> Optimisers.Adam(LR, β),
+        "adamw" => () -> Optimisers.AdamW(LR, β, decay, ε),
         "momentum" => () -> Optimisers.Momentum(LR, ρ),
         "nesterov" => () -> Optimisers.Nesterov(LR, ρ),
         "sgd" => () -> Optimisers.Descent(LR),
