@@ -137,7 +137,7 @@ function Lux.initialparameters(
             scale = scale,
             translation = translation,
             weights = weights,
-            basis_τ = l.init_τ,
+            basis_τ = repeat(l.init_τ, l.in_dim),
         )
     end
 
@@ -175,11 +175,10 @@ function Lux.initialparameters(
         return (
             coef = glorot_normal(rng, Float32, l.in_dim, l.out_dim, l.spline_degree + 1) .*
                 (1 / (l.in_dim * (l.spline_degree + 1))),
-            basis_τ = l.init_τ,
+            basis_τ = [1.01f0],
         )
     else
-        ps = (w_base = w_base, w_sp = w_sp, coef = coef)
-        l.τ_trainable && (ps = merge(ps, (basis_τ = l.init_τ,)))
+        ps = l.τ_trainable ? (w_base = w_base, w_sp = w_sp, coef = coef, basis_τ = repeat(l.init_τ, l.in_dim)) : (w_base = w_base, w_sp = w_sp, coef = coef)
         l.grid_trainable && (ps = merge(ps, (grid = l.init_grid,)))
         return ps
     end

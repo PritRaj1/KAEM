@@ -107,20 +107,20 @@ end
 
 # Local maxima above prominence floor
 function kde_peaks(
-    grid::AbstractVector{Float32},
-    density::AbstractVector{Float32};
-    rel_prominence=0.02f0,
-    min_sep=1.0f0,
-)
+        grid::AbstractVector{Float32},
+        density::AbstractVector{Float32};
+        rel_prominence = 0.02f0,
+        min_sep = 1.0f0,
+    )
     n = length(grid)
     dmax = maximum(density)
 
-    candidates = Tuple{Float32,Float32}[]
+    candidates = Tuple{Float32, Float32}[]
 
-    for i in 2:n-1
-        if density[i] > density[i-1] &&
-           density[i] > density[i+1] &&
-           density[i] > rel_prominence*dmax
+    for i in 2:(n - 1)
+        if density[i] > density[i - 1] &&
+                density[i] > density[i + 1] &&
+                density[i] > rel_prominence * dmax
             push!(candidates, (grid[i], density[i]))
         end
     end
@@ -131,7 +131,7 @@ function kde_peaks(
     peaks = Float32[]
 
     for (loc, _) in candidates
-        if all(abs(loc-p) > min_sep for p in peaks)
+        if all(abs(loc - p) > min_sep for p in peaks)
             push!(peaks, loc)
         end
     end

@@ -2,7 +2,7 @@ module ModelGridUpdating
 
 export GridUpdater
 
-using Accessors, Lux, ComponentArrays, ConfParser, Reactant
+using Accessors, Lux, ComponentArrays, ConfParser, Reactant, Statistics
 
 using ..Utils
 using ..KAEM_model
@@ -79,8 +79,8 @@ function GridUpdater(model, conf::ConfParse)
         model,
         grid_update_frequency,
         grid_update_decay,
-        update_prior_grid && !nogrid_prior,
-        update_llhood_grid && !model.lkhood.CNN && !model.lkhood.SEQ && !nogrid_gen,
+        update_prior_grid,
+        update_llhood_grid && !model.lkhood.CNN && !model.lkhood.SEQ,
         nogrid_prior,
     )
 end
@@ -104,21 +104,21 @@ function (gu::GridUpdater)(
         # Must update domain for inverse transform sampling
         if (ula_bool && gu.nogrid_prior)
             red_dim = model.prior.bool_config.mixture_model ? (2, 3) : (1, 3)
-            min_z = dropdims(minimum(z; dims = red_dim); dims = red_dim)
-            max_z = dropdims(maximum(z; dims = red_dim); dims = red_dim)
 
-            # Ensure min_z < max_z
-            order_bool = min_z .< max_z
-            min_z = ifelse.(order_bool, min_z, max_z)
-            max_z = ifelse.(order_bool, max_z, min_z)
+            # Mean ± standard deviation
+            μ = dropdims(mean(z; dims = red_dim); dims = red_dim)
+            σ = dropdims(std(z; dims = red_dim); dims = red_dim)
+            lo_bound = μ .- σ
+            hi_bound = μ .+ σ
 
-            # Expand bounds slightly
-            low, high = zero(min_z) .+ 0.95f0, zero(max_z) .+ 1.05f0
-            lo_bound = ifelse.(min_z .< 0, high, low)
-            hi_bound = ifelse.(max_z .< 0, low, high)
+            # Ensure lo_bound < hi_bound
+            order_bool = lo_bound .< hi_bound
+            tmp_lo = copy(lo_bound)
+            lo_bound = ifelse.(order_bool, tmp_lo, hi_bound)
+            hi_bound = ifelse.(order_bool, hi_bound, tmp_lo)
 
-            @reset st_kan.ebm.a.min = lo_bound .* min_z
-            @reset st_kan.ebm.a.max = lo_bound .* max_z
+            @reset st_kan.ebm.a.min = lo_bound
+            @reset st_kan.ebm.a.max = hi_bound
         end
 
         if !gu.nogrid_prior
@@ -175,16 +175,15 @@ function (gu::GridUpdater)(
                     dropdims(sum(z, dims = 1); dims = 1)
             end
         end
+        new_nodes, new_weights = get_gausslegendre(
+            model.prior,
+            st_kan.ebm,
+            st_kan.quad.init_nodes,
+            st_kan.quad.init_weights
+        )
+        @reset st_kan.quad.nodes = new_nodes
+        @reset st_kan.quad.weights = new_weights
     end
-
-    new_nodes, new_weights = get_gausslegendre(
-        model.prior,
-        st_kan.ebm,
-        st_kan.quad.init_nodes,
-        st_kan.quad.init_weights
-    )
-    @reset st_kan.quad.nodes = new_nodes
-    @reset st_kan.quad.weights = new_weights
 
     # Only update if KAN-type generator requires
     if gu.update_llhood_grid

@@ -180,9 +180,10 @@ function (lp::LogPriorMix)(
                         component_mask = component_mask,
                     )
                 ), dims = 3
-            ), (1, 3, 2))
+            ), (1, 3, 2)
+        )
     end
-#
+    #
     # Energy functions of each component, q -> p
     f, st_lyrnorm = ebm(ps, st_kan, st_lyrnorm, dropdims(z; dims = 2))
     log_p = log_mix_pdf(f, alpha, π_0, Z, lp.ε)
