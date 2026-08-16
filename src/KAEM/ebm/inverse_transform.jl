@@ -96,16 +96,16 @@ function (s::MixITSSampler)(ps, st_kan, st_lux, st_rng; ula_init = false)
 
     cdf = cumsum(cdf; dims = 3)
     cdf = PermutedDimsArray(view(cdf, :, :, :, :), (1, 4, 3, 2))
-    cdf = cat(view(zero(cdf), :, :, 1:1, :), cdf; dims = 3)
+    # cdf = cat(view(zero(cdf), :, :, 1:1, :), cdf; dims = 3)
 
     zmin = ebm.bool_config.no_grid ? st_kan.ebm[:a].min : view(st_kan.ebm[:a].grid, :, 1)
     grid = PermutedDimsArray(view(grid, :, :, :), (1, 3, 2))
-    grid = cat(reshape(zmin, Q, 1, 1), grid; dims = 3)
+    # grid = cat(reshape(zmin, Q, 1, 1), grid; dims = 3)
 
     rv = ula_init ? st_rng.posterior_its : st_rng.prior_its
     rand_vals = rv .* cdf[:, :, end:end, :] .* 1.0f0
     cdf_4d = cdf .* 1.0f0
-    grid_4d = reshape(grid, Q, 1, G + 1, 1) .* 1.0f0
+    grid_4d = reshape(grid, Q, 1, G, 1) .* 1.0f0
 
     return _its_step(cdf_4d, grid_4d, rand_vals, ebm.π_pdf.ε, Q, 1, B, true), st_lyrnorm_new
 end

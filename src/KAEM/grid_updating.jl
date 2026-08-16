@@ -108,14 +108,8 @@ function (gu::GridUpdater)(
             # Mean ± standard deviation
             μ = dropdims(mean(z; dims = red_dim); dims = red_dim)
             σ = dropdims(std(z; dims = red_dim); dims = red_dim)
-            lo_bound = μ .- σ
-            hi_bound = μ .+ σ
-
-            # Ensure lo_bound < hi_bound
-            order_bool = lo_bound .< hi_bound
-            tmp_lo = copy(lo_bound)
-            lo_bound = ifelse.(order_bool, tmp_lo, hi_bound)
-            hi_bound = ifelse.(order_bool, hi_bound, tmp_lo)
+            lo_bound = μ .- 3 * σ
+            hi_bound = μ .+ 3 * σ
 
             @reset st_kan.ebm.a.min = lo_bound
             @reset st_kan.ebm.a.max = hi_bound
