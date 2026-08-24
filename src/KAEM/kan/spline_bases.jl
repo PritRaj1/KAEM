@@ -56,7 +56,6 @@ end
 
 struct Cheby_basis <: AbstractBasis
     degree
-    lin
     I
     O
     G
@@ -65,10 +64,8 @@ end
 
 function Cheby_basis(degree::Int, I::Int, O::Int, S::Int)
     G = degree + 1
-    lin = Lux.f32((0:degree)')
     return Cheby_basis(
         degree,
-        lin,
         I,
         O,
         G,
@@ -137,16 +134,24 @@ function (b::RSWAF_basis)(
     return 1.0f0 .- diff .^ 2
 end
 
-# Not working
-function (b::Cheby_basis)(
-        x,
-        grid,
-        σ,
-        scale,
-    )
-    x_3d = PermutedDimsArray(view(x, :, :, :), (1, 3, 2))
-    x_3d = (tanh_fast(x_3d) ./ σ)
-    return cos.(acos.(x_3d) .* b.lin)
+function (b::Cheby_basis)(x, grid, σ, scale)
+    x = tanh_fast(x)
+    out = similar(x, b.I, b.G, size(x, 2))
+
+    # T₀(x) = 1
+    out[:, 1, :] .= 1
+
+    # T₁(x) = x
+    if b.G > 1
+        out[:, 2, :] .= x
+    end
+
+    # Tₖ(x) = 2xTₖ₋₁(x) - Tₖ₋₂(x)
+    for k in 3:b.G
+        out[:, k, :] .= 2 .* x .* out[:, k - 1, :] .- out[:, k - 2, :]
+    end
+
+    return out
 end
 
 function coef2curve_Spline(
