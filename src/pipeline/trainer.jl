@@ -269,9 +269,7 @@ function train!(t::KAEM_trainer; train_idx::Int = 1, trial = nothing)
     function step!()
         t.st_rng = seed_rand(t.model; rng = t.rng)
 
-        if (
-                train_idx == 1 || (train_idx - t.last_grid_update >= t.grid_updater.update_frequency)
-            ) && (t.grid_updater.update_llhood_grid || t.grid_updater.update_prior_grid)
+        if (train_idx - t.last_grid_update >= t.grid_updater.update_frequency) && (t.grid_updater.update_llhood_grid || t.grid_updater.update_prior_grid) && train_idx > 1
 
             t.ps, t.st_kan, st_lux = grid_compiled(
                 t.x,

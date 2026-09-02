@@ -58,17 +58,17 @@ function (s::UnivITSSampler)(ps, st_kan, st_lux, st_rng; ula_init = false)
         ebm, ps.ebm, st_kan.ebm, Lux.testmode(st_lux.ebm), st_kan.quad,
     )
     cdf = cumsum(cdf; dims = 3)
-    cdf = cat(view(zero(cdf), :, :, 1:1), cdf; dims = 3)
+    # cdf = cat(view(zero(cdf), :, :, 1:1), cdf; dims = 3)
 
     zmin = ebm.bool_config.no_grid ? st_kan.ebm[:a].min : view(st_kan.ebm[:a].grid, :, 1)
     grid = PermutedDimsArray(view(grid, :, :, :), (3, 1, 2))
-    grid = cat(reshape(zmin, 1, P, 1), grid; dims = 3)
+    # grid = cat(reshape(zmin, 1, P, 1), grid; dims = 3)
 
     rv = ula_init ? st_rng.posterior_its : st_rng.prior_its
     rand_vals = rv .* cdf[:, :, end]
 
-    cdf_4d = reshape(cdf, Q, P, G + 1, 1) .* 1.0f0
-    grid_4d = reshape(grid, 1, P, G + 1, 1) .* 1.0f0
+    cdf_4d = reshape(cdf, Q, P, G, 1) .* 1.0f0
+    grid_4d = reshape(grid, 1, P, G, 1) .* 1.0f0
     rv_4d = reshape(rand_vals, Q, P, 1, B) .* 1.0f0
 
     return _its_step(cdf_4d, grid_4d, rv_4d, ebm.π_pdf.ε, Q, P, B, false), st_lyrnorm_new
@@ -90,8 +90,8 @@ function (s::MixITSSampler)(ps, st_kan, st_lux, st_rng; ula_init = false)
     mask = choose_component(alpha, B, Q, P, st_rng; ula_init = ula_init)
 
     cdf, grid, st_lyrnorm_new = ebm.quad(
-        ebm, ps.ebm, st_kan.ebm, Lux.testmode(st_lux.ebm), st_kan.quad;
-        mode = MixtureMode(), component_mask = mask,
+        ebm, ps.ebm, st_kan.ebm, Lux.testmode(st_lux.ebm), st_kan.quad, mask;
+        mode = MixtureMode(),
     )
 
     cdf = cumsum(cdf; dims = 3)

@@ -80,7 +80,7 @@ function GridUpdater(model, conf::ConfParse)
         grid_update_frequency,
         grid_update_decay,
         update_prior_grid,
-        update_llhood_grid && !model.lkhood.CNN && !model.lkhood.SEQ,
+        update_llhood_grid && !model.lkhood.CNN && !model.lkhood.SEQ && !nogrid_gen,
         nogrid_prior,
     )
 end
@@ -104,15 +104,10 @@ function (gu::GridUpdater)(
         # Must update domain for inverse transform sampling
         if (ula_bool && gu.nogrid_prior)
             red_dim = model.prior.bool_config.mixture_model ? (2, 3) : (1, 3)
-
-            # Mean ± standard deviation
-            μ = dropdims(mean(z; dims = red_dim); dims = red_dim)
-            σ = dropdims(std(z; dims = red_dim); dims = red_dim)
-            lo_bound = μ .- 3 * σ
-            hi_bound = μ .+ 3 * σ
-
-            @reset st_kan.ebm.a.min = lo_bound
-            @reset st_kan.ebm.a.max = hi_bound
+            lo_bound = dropdims(minimum(z; dims = red_dim); dims = red_dim)
+            hi_bound = dropdims(maximum(z; dims = red_dim); dims = red_dim)
+            @reset st_kan.ebm.a.min = lo_bound .* 1.0f0
+            @reset st_kan.ebm.a.max = hi_bound .* 1.0f0
         end
 
         if !gu.nogrid_prior

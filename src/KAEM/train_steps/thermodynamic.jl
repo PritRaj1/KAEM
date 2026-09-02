@@ -10,7 +10,6 @@ using ..KAEM_model
 include("../gen/loglikelihoods.jl")
 include("../ebm/mixture_selection.jl")
 using .LogLikelihoods: log_likelihood_MALA
-using .MixtureChoice: choose_component
 
 function sample_thermo(
         ps,
@@ -33,14 +32,7 @@ function sample_thermo(
     tempered_noise = st_rng.tempered_noise
     noise = st_rng.train_noise
 
-    Q, P, S = model.prior.q_size, model.prior.p_size, model.batch_size
-    component_mask = (
-        model.prior.bool_config.mixture_model && !model.prior.bool_config.contrastive_div ?
-            choose_component(ps.ebm.dist.α, S, Q, P, st_rng) :
-            nothing
-    )
-
-    return z, Δt, st_lux, noise, tempered_noise, component_mask
+    return z, Δt, st_lux, noise, tempered_noise
 end
 
 function marginal_llhood(
@@ -54,7 +46,6 @@ function marginal_llhood(
         st_lux_gen,
         noise,
         tempered_noise,
-        component_mask,
     )
 
     num_temps = model.N_t > 1 ? model.N_t : 1
@@ -81,8 +72,7 @@ function marginal_llhood(
         ps.ebm,
         st_kan.ebm,
         st_lux_ebm,
-        st_kan.quad;
-        component_mask = component_mask,
+        st_kan.quad,
     )
 
     logprior, st_ebm = model.log_prior(
@@ -91,8 +81,7 @@ function marginal_llhood(
         ps.ebm,
         st_kan.ebm,
         st_ebm,
-        st_kan.quad;
-        component_mask = component_mask
+        st_kan.quad,
     )
     ex_prior = model.prior.bool_config.contrastive_div ? mean(logprior) : 0.0f0
 
@@ -122,7 +111,7 @@ function (l::ThermoLoss)(
         train_idx,
         st_rng,
     )
-    z, Δt, st_lux, noise, tempered_noise, component_mask = sample_thermo(
+    z, Δt, st_lux, noise, tempered_noise = sample_thermo(
         ps,
         st_kan,
         st_lux,
@@ -156,7 +145,6 @@ function (l::ThermoLoss)(
         Const(st_lux_gen),
         Const(noise),
         Const(tempered_noise),
-        Const(component_mask),
     )
 
     opt_state_gen, ps_gen_new = Optimisers.update(opt_state.gen, ps.gen, dps.gen)

@@ -10,7 +10,6 @@ using ..KAEM_model
 include("../gen/loglikelihoods.jl")
 include("../ebm/mixture_selection.jl")
 using .LogLikelihoods: log_likelihood_MALA
-using .MixtureChoice: choose_component
 
 function elbo_loss(
         ps,
@@ -23,14 +22,12 @@ function elbo_loss(
         st_lux_gen,
         noise,
         β,
-        component_mask,
     )
     z_posterior, log_q, μ, logvar, st_enc = model.encoder(
         ps.enc,
         st_lux_enc,
         x,
-        ε;
-        component_mask = component_mask,
+        ε,
     )
 
     log_p, st_ebm = model.log_prior(
@@ -41,7 +38,6 @@ function elbo_loss(
         st_lux_ebm,
         st_kan.quad;
         ula = false,
-        component_mask = component_mask,
     )
 
     logllhood, st_gen = log_likelihood_MALA(
@@ -88,13 +84,6 @@ function (l::VariationalLoss)(
 
     ε = st_rng.encoder_noise
     noise = st_rng.train_noise
-    Q, P, S = l.model.prior.q_size, l.model.prior.p_size, l.model.batch_size
-
-    component_mask = (
-        l.model.encoder.bool_config.mixture_model ?
-            choose_component(ps.ebm.dist.α, S, Q, P, st_rng) :
-            nothing
-    )
 
     st_lux_enc = st_lux.enc
     st_lux_ebm = st_lux.ebm
@@ -115,7 +104,6 @@ function (l::VariationalLoss)(
         Const(st_lux_gen),
         Const(noise),
         Const(β),
-        Const(component_mask),
     )
 
     opt_state_gen, ps_gen_new = Optimisers.update(opt_state.gen, ps.gen, dps.gen)

@@ -11,7 +11,6 @@ using ..KAEM_model
 include("../gen/loglikelihoods.jl")
 include("../ebm/mixture_selection.jl")
 using .LogLikelihoods: log_likelihood_IS
-using .MixtureChoice: choose_component
 
 function loss_accum(
         logprior,
@@ -60,22 +59,12 @@ function sample_importance(
 
     # Works better with more samples
     z_prior, st_lux_ebm = m.sample_prior(ps, st_kan, st_lux, st_rng)
-
-    # Get component mask for mixture model normalization
-    Q, P, S = m.prior.q_size, m.prior.p_size, m.batch_size
-    component_mask = (
-        m.prior.bool_config.mixture_model && !m.prior.bool_config.contrastive_div ?
-            choose_component(ps.ebm.dist.α, S, Q, P, st_rng) :
-            nothing
-    )
-
     return z_posterior,
         z_prior,
         st_lux_ebm,
         st_lux_gen,
         resampled_mask,
-        noise,
-        component_mask
+        noise
 end
 
 function marginal_llhood(
@@ -89,7 +78,6 @@ function marginal_llhood(
         st_lux_ebm,
         st_lux_gen,
         noise,
-        component_mask,
     )
     B, N = m.batch_size, m.batch_size
 
@@ -99,8 +87,7 @@ function marginal_llhood(
         ps.ebm,
         st_kan.ebm,
         st_lux_ebm,
-        st_kan.quad;
-        component_mask = component_mask
+        st_kan.quad,
     )
     logllhood, st_gen = log_likelihood_IS(
         z_posterior,
@@ -119,8 +106,7 @@ function marginal_llhood(
         ps.ebm,
         st_kan.ebm,
         st_ebm,
-        st_kan.quad;
-        component_mask = component_mask
+        st_kan.quad,
     )
     ex_prior = m.prior.bool_config.contrastive_div ? mean(logprior_prior) : 0.0f0
 
@@ -159,7 +145,7 @@ function (l::ImportanceLoss)(
         st_rng,
     )
 
-    z_posterior, z_prior, st_ebm, st_gen, resampled_mask, noise, component_mask =
+    z_posterior, z_prior, st_ebm, st_gen, resampled_mask, noise =
         sample_importance(ps, st_kan, st_lux, l.model, x, st_rng)
 
     dps = Enzyme.make_zero(ps)
@@ -177,7 +163,6 @@ function (l::ImportanceLoss)(
         Const(st_ebm),
         Const(st_gen),
         Const(noise),
-        Const(component_mask),
     )
 
     opt_state_gen, ps_gen_new = Optimisers.update(opt_state.gen, ps.gen, dps.gen)

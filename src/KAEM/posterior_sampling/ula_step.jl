@@ -29,7 +29,6 @@ function (k::UlaKernel)(
         log_u_swap,
         mask_swap_1,
         mask_swap_2,
-        component_mask,
         temps,
     )
     ξ = noise[:, :, :, i]
@@ -41,7 +40,6 @@ function (k::UlaKernel)(
         ps,
         st_kan,
         st_lux,
-        component_mask,
         k.log_dist,
     )
     new_z = z_i .+ k.η .* ∇z .+ k.sqrt_2η .* ξ

@@ -55,6 +55,7 @@ for i in "${!jobs[@]}"; do
         if [[ "$mode" == "vanilla" || "$mode" == "thermo" ]] && is_latent_supported "$dataset"; then
             echo "[$n/$total] mode_interp.jl $dataset $mode"
             julia --project=. --threads=auto mode_interp.jl "$dataset" "$mode" 2>&1 | tee -a "$LOGFILE"
+            julia --project=. --threads=auto slerp_interp.jl "$dataset" "$mode" 2>&1 | tee -a "$LOGFILE"
         fi
     fi
 

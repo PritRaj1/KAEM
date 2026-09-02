@@ -134,13 +134,6 @@ function (sampler::LangevinSampler)(
         end
     end
 
-    component_mask = (
-        model.prior.bool_config.mixture_model && !model.prior.bool_config.contrastive_div ?
-            choose_component(ps.ebm.dist.α, S, Q, P, st_rng) :
-            nothing
-    )
-    component_mask = isnothing(component_mask) ? nothing : repeat(component_mask, 1, 1, num_temps)
-
     @reset model.prior.s_size = S * num_temps
     @reset model.lkhood.generator.s_size = S * num_temps
     temps_gpu = repeat(temps, S)
@@ -175,7 +168,6 @@ function (sampler::LangevinSampler)(
             log_u_swap,
             mask_swap_1,
             mask_swap_2,
-            component_mask,
             temps
         )
         state = (i + 1, z_new)

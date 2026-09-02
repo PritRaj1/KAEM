@@ -35,7 +35,6 @@ function (k::PcnlKernel)(
         log_u_swap,
         mask_swap_1,
         mask_swap_2,
-        component_mask,
         temps,
     )
     Q, P, S, num_temps = k.Q, k.P, k.S, k.num_temps
@@ -47,7 +46,7 @@ function (k::PcnlKernel)(
     # Dℓ(u) = ∇log_target(u) + u
     ∇z = unadjusted_grad(
         z_i, x_t, temps_gpu, model, ps, st_kan, st_lux,
-        component_mask, k.log_dist,
+        k.log_dist,
     )
     Dell_old = ∇z .+ z_i
 
@@ -58,7 +57,7 @@ function (k::PcnlKernel)(
     # Reverse Dℓ(v)
     ∇z_prop = unadjusted_grad(
         z_prop, x_t, temps_gpu, model, ps, st_kan, st_lux,
-        component_mask, k.log_dist,
+        k.log_dist,
     )
     Dell_new = ∇z_prop .+ z_prop
     m_new = k.z_c .* z_prop .+ (1.0f0 - k.z_c) .* Dell_new
@@ -66,11 +65,11 @@ function (k::PcnlKernel)(
     # Per-sample log-target
     logp_old = k.eval_dist(
         z_i, x_t, temps_gpu, model, ps, st_kan, st_lux,
-        component_mask, zero_vector,
+        zero_vector,
     )
     logp_new = k.eval_dist(
         z_prop, x_t, temps_gpu, model, ps, st_kan, st_lux,
-        component_mask, zero_vector,
+        zero_vector,
     )
 
     # MH: log α = π(v)/π(u) · q(u|v)/q(v|u)

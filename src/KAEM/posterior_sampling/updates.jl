@@ -19,7 +19,6 @@ function per_sample_logpos(
         ps,
         st_kan,
         st_lux,
-        component_mask,
         zero_vector,
     )
 
@@ -32,7 +31,6 @@ function per_sample_logpos(
             st_lux.ebm,
             st_kan.quad;
             ula = true,
-            component_mask = component_mask,
         )
     )
 
@@ -60,7 +58,6 @@ function per_sample_logprior(
         ps,
         st_kan,
         st_lux,
-        component_mask,
         zero_vector,
     )
 
@@ -73,7 +70,6 @@ function per_sample_logprior(
             st_lux.ebm,
             st_kan.quad;
             ula = true,
-            component_mask = component_mask,
         )
     )
 end
@@ -87,7 +83,6 @@ function unadjusted_logpos(
         ps,
         st_kan,
         st_lux,
-        component_mask,
         zero_vector,
     )
     return sum(
@@ -99,7 +94,6 @@ function unadjusted_logpos(
             ps,
             st_kan,
             st_lux,
-            component_mask,
             zero_vector,
         )
     )
@@ -113,7 +107,6 @@ function unadjusted_logprior(
         ps,
         st_kan,
         st_lux,
-        component_mask,
         zero_vector,
     )
     return sum(
@@ -125,7 +118,6 @@ function unadjusted_logprior(
             ps,
             st_kan,
             st_lux,
-            component_mask,
             zero_vector,
         )
     )
@@ -139,7 +131,6 @@ function unadjusted_grad(
         ps,
         st_kan,
         st_lux,
-        component_mask,
         log_dist,
     )
 
@@ -156,7 +147,6 @@ function unadjusted_grad(
             Enzyme.Const(ps),
             Enzyme.Const(st_kan),
             Enzyme.Const(st_lux),
-            Enzyme.Const(component_mask),
             Enzyme.Const(zero_vector)
         )
     )

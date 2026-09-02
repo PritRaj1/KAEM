@@ -6,8 +6,6 @@ using LinearAlgebra, Random, ComponentArrays, Accessors
 
 using ..Utils
 
-negative_one = - ones(Float32, 1, 1, 1)
-
 struct GaussLegendreQuadrature <: AbstractQuadrature end
 
 function qfirst_exp_kernel(f, π0)
@@ -66,6 +64,12 @@ function mix_return(nodes, π_nodes, weights, component_mask)
     return trapz
 end
 
+function mix_return(nodes, π_nodes, weights)
+    exp_fg = qfirst_exp_kernel(nodes, π_nodes)
+    trapz = gauss_kernel(exp_fg, weights)
+    return trapz
+end
+
 function univar_return(nodes, π_nodes, weights)
     exp_fg = pfirst_exp_kernel(nodes, π_nodes)
     exp_fg = weight_kernel(exp_fg, weights)
@@ -76,15 +80,17 @@ _quad_return(::UnivariateMode, nodes, π_nodes, weights, _component_mask) =
     univar_return(nodes, π_nodes, weights)
 _quad_return(::MixtureMode, nodes, π_nodes, weights, component_mask) =
     mix_return(nodes, π_nodes, weights, component_mask)
+_quad_return(::MixtureMode, nodes, π_nodes, weights) =
+    mix_return(nodes, π_nodes, weights)
 
 function (gq::GaussLegendreQuadrature)(
         ebm,
         ps,
         st_kan,
         st_lyrnorm,
-        st_quad;
+        st_quad,
+        component_mask;
         mode::AbstractSamplingMode = UnivariateMode(),
-        component_mask = negative_one,
     )
     """Gauss-Legendre quadrature for numerical integration."""
     nodes, weights = st_quad.nodes, st_quad.weights
@@ -104,6 +110,35 @@ function (gq::GaussLegendreQuadrature)(
 
     nodes, st_lyrnorm_new = ebm(ps, st_kan, st_lyrnorm, nodes)
     result = _quad_return(mode, nodes, π_nodes, weights, component_mask)
+    return result, st_quad.nodes, st_lyrnorm_new
+end
+
+function (gq::GaussLegendreQuadrature)(
+        ebm,
+        ps,
+        st_kan,
+        st_lyrnorm,
+        st_quad;
+        mode::AbstractSamplingMode = UnivariateMode(),
+    )
+    """Gauss-Legendre quadrature for numerical integration without mix masking."""
+    nodes, weights = st_quad.nodes, st_quad.weights
+    I, O = first(ebm.fcns_qp).in_dim, first(ebm.fcns_qp).out_dim
+    Q, P, S = ebm.q_size, ebm.p_size, ebm.N_quad
+
+    transpose_bool = ebm.prior_type ∈ ("learnable_gaussian", "kl_gaussian")
+    nodes_in = transpose_bool ? nodes' : nodes
+    π_nodes = ebm.π_pdf(nodes_in, ps.dist.π_μ, ps.dist.π_σ)
+    π_nodes = transpose_bool ? π_nodes' : π_nodes
+
+    for i in 1:ebm.depth
+        @reset ebm.fcns_qp[i].basis_function.S = S
+    end
+
+    @reset ebm.s_size = S
+
+    nodes, st_lyrnorm_new = ebm(ps, st_kan, st_lyrnorm, nodes)
+    result = _quad_return(mode, nodes, π_nodes, weights)
     return result, st_quad.nodes, st_lyrnorm_new
 end
 

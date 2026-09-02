@@ -10,7 +10,6 @@ using ..KAEM_model
 include("../gen/loglikelihoods.jl")
 include("../ebm/mixture_selection.jl")
 using .LogLikelihoods: log_likelihood_MALA
-using .MixtureChoice: choose_component
 
 function sample_langevin(
         ps,
@@ -22,15 +21,7 @@ function sample_langevin(
     )
     z, st_lux = model.posterior_sampler(ps, st_kan, st_lux, x, st_rng)
     noise = st_rng.train_noise
-
-    Q, P, S = model.prior.q_size, model.prior.p_size, model.batch_size
-    component_mask = (
-        model.prior.bool_config.mixture_model && !model.prior.bool_config.contrastive_div ?
-            choose_component(ps.ebm.dist.α, S, Q, P, st_rng) :
-            nothing
-    )
-
-    return z[:, :, :, 1], st_lux, noise, component_mask
+    return z[:, :, :, 1], st_lux, noise
 end
 
 function marginal_llhood(
@@ -43,7 +34,6 @@ function marginal_llhood(
         st_lux_ebm,
         st_lux_gen,
         noise,
-        component_mask,
     )
 
     logprior_pos, st_ebm = model.log_prior(
@@ -52,8 +42,7 @@ function marginal_llhood(
         ps.ebm,
         st_kan.ebm,
         st_lux_ebm,
-        st_kan.quad;
-        component_mask = component_mask
+        st_kan.quad,
     )
     logllhood, st_gen = log_likelihood_MALA(
         z_posterior,
@@ -72,8 +61,7 @@ function marginal_llhood(
         ps.ebm,
         st_kan.ebm,
         st_ebm,
-        st_kan.quad;
-        component_mask = component_mask
+        st_kan.quad,
     )
     ex_prior = model.prior.bool_config.contrastive_div ? mean(logprior) : 0.0f0
 
@@ -103,7 +91,7 @@ function (l::LangevinLoss)(
         train_idx,
         st_rng,
     )
-    z_posterior, st_new, noise, component_mask =
+    z_posterior, st_new, noise =
         sample_langevin(ps, st_kan, st_lux, l.model, x, st_rng)
     st_lux_ebm, st_lux_gen = st_new.ebm, st_new.gen
     z_prior, st_lux_ebm = l.model.sample_prior(ps, st_kan, st_lux, st_rng)
@@ -122,7 +110,6 @@ function (l::LangevinLoss)(
         Const(st_lux_ebm),
         Const(st_lux_gen),
         Const(noise),
-        Const(component_mask),
     )
 
     opt_state_gen, ps_gen_new = Optimisers.update(opt_state.gen, ps.gen, dps.gen)
