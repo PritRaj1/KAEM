@@ -212,7 +212,7 @@ function init_CNN_Generator(
         Lux.ConvTranspose(
             (k_size[end], k_size[end]),
             hidden_c[end] + prev_c => last(x_shape),
-            identity;
+            sigmoid;
             stride = strides[end],
             pad = paddings[end],
         ),
